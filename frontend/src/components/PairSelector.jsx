@@ -42,11 +42,11 @@ export default function PairSelector({ selected, onChange }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-full border transition-colors ${
+        className={`flex items-center gap-1.5 pl-2.5 pr-2 py-1 rounded-full border transition-colors ${
           open ? 'border-white/20 bg-white/[0.06]' : 'border-border bg-white/[0.035] hover:bg-white/[0.05]'
         }`}
       >
-        <span className="text-[13px] font-bold text-ink select-none">{current.label}</span>
+        <span className="text-[12px] font-bold text-ink select-none">{current.label}</span>
         <span className="text-muted"><Chevron open={open} /></span>
       </button>
       {open && (

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { fetchNews } from '../services/api';
 
 const EVENTS = [
   { time: '09:30', label: 'Market Open', type: 'info', impact: 'Low volatility expected', detail: 'London session opens. Liquidity increasing across G10 pairs. No major gaps expected from Asia close.' },
@@ -67,8 +68,98 @@ function EventRow({ event }) {
   );
 }
 
-export default function EventTimeline() {
-  const [tab, setTab] = useState('upcoming');
+function formatRelative(iso) {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  const diff = Math.max(0, Math.floor((now - then) / 1000));
+  if (diff < 60) return `${diff}s`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  return `${Math.floor(diff / 86400)}d`;
+}
+
+const LiveNewsRow = React.memo(function LiveNewsRow({ item }) {
+  const publishedTs = item.datePublished ? new Date(item.datePublished).getTime() : 0;
+  const isFresh = publishedTs > 0 && Date.now() - publishedTs <= 60 * 60_000;
+  const time = formatRelative(item.datePublished);
+
+  return (
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-2.5 px-[18px] py-2 hover:bg-white/[0.03] transition-colors cursor-pointer"
+    >
+      <div className="flex-1 min-w-0">
+        {/* Top line: provider · relative time · fresh dot */}
+        <div className="flex items-center gap-1.5 text-[10px] text-muted">
+          {item.provider && (
+            <span className="truncate max-w-[55%] text-subtle uppercase tracking-wide">
+              {item.provider}
+            </span>
+          )}
+          {time && <span className="font-mono">· {time}</span>}
+          {isFresh && (
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ backgroundColor: '#68a5ff' }}
+            />
+          )}
+        </div>
+        {/* Bottom line: title */}
+        <div className="text-[11.5px] text-ink/90 leading-snug line-clamp-2 mt-0.5">
+          {item.title}
+        </div>
+      </div>
+
+      {/* AI analyze icon — always visible */}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          window.dispatchEvent(new CustomEvent('agent-chat-send', {
+            detail: { message: `${item.title} başlıklı haberi yorumla. ${item.url}` },
+          }));
+        }}
+        title="Analyze with agent"
+        className="shrink-0 w-6 h-6 rounded-md bg-white/[0.05] hover:bg-purple/20 text-muted hover:text-purple grid place-items-center transition-colors"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3l1.8 4.9L18.7 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8L12 3z" fill="currentColor" />
+          <path d="M19 14l.9 2.5L22.4 17.4l-2.5.9L19 20.8l-.9-2.5L15.6 17.4l2.5-.9L19 14z" fill="currentColor" />
+        </svg>
+      </button>
+    </a>
+  );
+});
+
+export default function EventTimeline({ pair = 'USDTRY' }) {
+  const [tab, setTab] = useState('live');
+  const [news, setNews] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (tab !== 'live') return;
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetchNews(pair)
+      .then((data) => {
+        if (cancelled) return;
+        setNews(data.items || []);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err.message);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [tab, pair]);
 
   const now = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
@@ -81,41 +172,43 @@ export default function EventTimeline() {
     return h * 60 + m > nowMins;
   });
 
-  const items = tab === 'upcoming' ? future : past;
+  const scheduledItems = tab === 'upcoming' ? future : tab === 'past' ? past : [];
+
+  const tabClass = (id) =>
+    `text-[11px] px-2.5 py-1 rounded-full transition-colors ${
+      tab === id ? 'bg-ink text-[#0b1018] font-bold' : 'text-muted hover:text-ink'
+    }`;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="ui-section-header shrink-0">
         <div>
-          <h2 className="text-sm font-semibold text-ink leading-tight">Market News &amp; Alerts</h2>
-          <p className="text-[11px] text-muted leading-tight">Macro events &amp; risk signals</p>
+          <h2 className="text-sm font-semibold text-ink leading-tight">Market News</h2>
+          <p className="text-[11px] text-muted leading-tight">Live &amp; Scheduled</p>
         </div>
         <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-full p-0.5">
-          <button
-            onClick={() => setTab('upcoming')}
-            className={`text-[11px] px-2.5 py-1 rounded-full transition-colors ${
-              tab === 'upcoming' ? 'bg-ink text-[#0b1018] font-bold' : 'text-muted hover:text-ink'
-            }`}
-          >
-            Upcoming
-          </button>
-          <button
-            onClick={() => setTab('past')}
-            className={`text-[11px] px-2.5 py-1 rounded-full transition-colors ${
-              tab === 'past' ? 'bg-ink text-[#0b1018] font-bold' : 'text-muted hover:text-ink'
-            }`}
-          >
-            Past
-          </button>
+          <button onClick={() => setTab('live')} className={tabClass('live')}>Live</button>
+          <button onClick={() => setTab('upcoming')} className={tabClass('upcoming')}>Upcoming</button>
+          <button onClick={() => setTab('past')} className={tabClass('past')}>Past</button>
         </div>
       </div>
       {/* List */}
       <div className="flex-1 overflow-y-auto py-1">
-        {items.length === 0 ? (
+        {tab === 'live' ? (
+          loading ? (
+            <div className="text-center text-muted text-[10px] py-4">Loading news…</div>
+          ) : error ? (
+            <div className="text-center text-red text-[10px] py-4">Failed to load: {error}</div>
+          ) : news.length === 0 ? (
+            <div className="text-center text-muted text-[10px] py-4">No live news</div>
+          ) : (
+            news.map((item, i) => <LiveNewsRow key={i} item={item} />)
+          )
+        ) : scheduledItems.length === 0 ? (
           <div className="text-center text-muted text-[10px] py-4">No {tab} events</div>
         ) : (
-          items.map((e, i) => <EventRow key={i} event={e} />)
+          scheduledItems.map((e, i) => <EventRow key={i} event={e} />)
         )}
       </div>
     </div>

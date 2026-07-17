@@ -234,20 +234,19 @@ export default function App() {
     <div className="min-h-screen text-ink">
       <main className="max-w-[1720px] mx-auto px-6 pt-5 pb-8">
         {/* Topbar */}
-        <header className="h-16 flex items-center justify-between gap-5 border-b border-white/[0.07] mb-5">
-          <div className="flex items-center gap-4 min-w-0">
+        <header className="h-12 flex items-center justify-between gap-5 border-b border-white/[0.07] mb-5">
+          <div className="flex items-center gap-3 min-w-0">
             <div
-              className="w-9 h-9 rounded-xl shrink-0"
+              className="w-7 h-7 rounded-lg shrink-0"
               style={{
                 background: 'linear-gradient(135deg, #ffd84d, #fd8e42 46%, #9b6cff)',
-                boxShadow: '0 12px 35px rgba(255,216,77,.17)',
+                boxShadow: '0 8px 24px rgba(255,216,77,.17)',
               }}
             />
             <div className="min-w-0">
-              <h1 className="text-xl font-bold tracking-tight whitespace-nowrap text-ink">
-                FX Treasury Intelligence Cloud
+              <h1 className="text-base font-bold tracking-tight whitespace-nowrap leading-tight" style={{ color: '#ffffff' }}>
+                FX Treasury Agent Cockpit
               </h1>
-              <p className="text-xs text-muted mt-0.5">Decision-first treasury cockpit</p>
             </div>
             <PairSelector selected={pair} onChange={setPair} />
           </div>
@@ -280,78 +279,101 @@ export default function App() {
           </div>
         </header>
 
-        {/* Layout: main stack + right panel */}
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(720px,1fr)_420px] gap-[18px] items-start">
+        {/* Layout: main stack (with bottom 3-col: OrderPressure | News | Model Decisions) + Agent Chat */}
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(600px,1fr)_360px] gap-[18px] items-start">
           {/* Main stack */}
           <div className="grid gap-[18px] min-w-0">
             {/* KPI Cards */}
             <KpiCards rateHistory={rateHistory} />
 
             {/* Chart card */}
-            <section className="ui-card overflow-hidden" style={{ minHeight: 510 }}>
-              <div style={{ height: 510 }} className="flex flex-col">
+            <section className="ui-card overflow-hidden" style={{ minHeight: 410 }}>
+              <div style={{ height: 410 }} className="flex flex-col">
                 <Chart rateHistory={rateHistory} pair={pair} onPairChange={setPair} onVisiblePriceRange={setVisiblePriceRange} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
               </div>
             </section>
 
-            {/* Bottom grid — Order Pressure + Market News */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <section className="ui-card overflow-hidden" style={{ height: 220 }}>
+            {/* Bottom grid — Order Pressure + Market News + Model Decision Stream */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <section className="ui-card overflow-hidden" style={{ height: 260 }}>
                 <OrderPressure rateHistory={rateHistory} />
               </section>
-              <section className="ui-card overflow-hidden" style={{ height: 220 }}>
-                <EventTimeline />
+              <section className="ui-card overflow-hidden" style={{ height: 260 }}>
+                <EventTimeline pair={pair} />
+              </section>
+              <section className="ui-card flex flex-col overflow-hidden" style={{ height: 260 }}>
+                <div className="ui-section-header">
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-semibold text-ink flex items-center gap-2">
+                      Model Decision Stream
+                      {latestDecision?.status === 'pending' && latestDecision?.type !== 'HOLD' && (
+                        <span className="blink-dot w-2 h-2 rounded-full bg-purple" />
+                      )}
+                    </h2>
+                    <p className="text-[11px] text-muted leading-tight">Front-run the market or hold the line</p>
+                  </div>
+                  <button
+                    onClick={() => (showAgentParams ? closeAgentParams() : setShowAgentParams(true))}
+                    className="text-[10px] text-purple hover:text-purple/80 hover:bg-purple/10 px-2 py-1 rounded-lg transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    <span>⚙️</span> Parameters
+                  </button>
+                </div>
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  <div className="flex-1 overflow-hidden">
+                    <DecisionFeed
+                      decisions={decisions}
+                      onAccept={handleAccept}
+                      onReject={handleReject}
+                    />
+                  </div>
+                </div>
               </section>
             </div>
           </div>
 
-          {/* Right panel — Agent Decision Stream */}
+          {/* Right panel — Agent Chat */}
           <aside className="grid gap-3 xl:sticky xl:top-[18px]">
-            <section className="ui-card flex flex-col overflow-hidden" style={{ minHeight: 'min(760px, calc(100vh - 56px))', maxHeight: 'calc(100vh - 56px)' }}>
-              <div className="ui-section-header">
-                <div className="min-w-0">
-                  <h2 className="text-sm font-semibold text-ink flex items-center gap-2">
-                    Agent Decision Stream
-                    {latestDecision?.status === 'pending' && latestDecision?.type !== 'HOLD' && (
-                      <span className="blink-dot w-2 h-2 rounded-full bg-purple" />
-                    )}
-                  </h2>
-                  <p className="text-xs text-muted mt-0.5">Prioritized, explainable, and action-oriented.</p>
-                </div>
-                <button
-                  onClick={() => (showAgentParams ? closeAgentParams() : setShowAgentParams(true))}
-                  className="text-[10px] text-purple hover:text-purple/80 hover:bg-purple/10 px-2 py-1 rounded-lg transition-colors flex items-center gap-1 shrink-0"
-                >
-                  <span>⚙️</span> Parameters
-                </button>
-              </div>
-              <div className="flex-1 overflow-hidden flex flex-col">
-                {showAgentParams ? (
-                  <AgentParams
-                    onClose={closeAgentParams}
-                    recommendation={chatRecommendation}
-                    onApplied={() => fetchAgentParams().then(setAgentParams).catch(() => {})}
-                  />
-                ) : (
-                  <>
-                    <AgentChat
-                      rateHistory={rateHistory}
-                      params={agentParams}
-                      onSubmit={handleChatSubmit}
-                    />
-                    <div className="flex-1 overflow-hidden">
-                      <DecisionFeed
-                        decisions={decisions}
-                        onAccept={handleAccept}
-                        onReject={handleReject}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
+            <section
+              className="ui-card flex flex-col overflow-hidden"
+              style={{
+                height: 'calc(100vh - 200px)',
+                maxHeight: 'calc(100vh - 200px)',
+                background:
+                  'linear-gradient(165deg, #232544 0%, #1c1d38 55%, #16172c 100%)',
+                borderColor: 'rgba(155, 108, 255, 0.22)',
+                boxShadow:
+                  '0 0 0 1px rgba(155,108,255,0.06) inset, 0 10px 28px -14px rgba(76, 29, 149, 0.35)',
+              }}
+            >
+              <AgentChat pair={pair} />
             </section>
           </aside>
         </div>
+
+        {/* Model Parameters modal */}
+        {showAgentParams && (
+          <div
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+            style={{ background: 'rgba(4, 8, 16, 0.72)', backdropFilter: 'blur(4px)' }}
+            onClick={closeAgentParams}
+          >
+            <div
+              className="ui-card flex flex-col overflow-hidden w-full max-w-[560px]"
+              style={{
+                maxHeight: 'calc(100vh - 32px)',
+                background: 'linear-gradient(180deg, #1e2030, #181a2a)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <AgentParams
+                onClose={closeAgentParams}
+                recommendation={chatRecommendation}
+                onApplied={() => fetchAgentParams().then(setAgentParams).catch(() => {})}
+              />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

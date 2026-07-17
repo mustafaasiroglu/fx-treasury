@@ -68,7 +68,7 @@ export default function AgentParams({ onClose, recommendation, onApplied }) {
       <div className="flex items-center justify-between px-3 py-2 border-b border-border">
         <div className="flex items-center gap-2">
           <span className="text-sm">⚙️</span>
-          <span className="text-xs font-bold text-primary">Agent Parameters</span>
+          <span className="text-xs font-bold text-primary">Model Parameters</span>
         </div>
         <button
           onClick={onClose}
@@ -81,7 +81,7 @@ export default function AgentParams({ onClose, recommendation, onApplied }) {
       {/* Algorithm description */}
       <div className="px-3 py-2 border-b border-border bg-surface/50">
         <p className="text-[10px] text-muted leading-relaxed">
-          <span className="text-purple-400 font-bold">Algorithm:</span> Agent computes the gap between market mid and client mid.
+          <span className="text-purple-400 font-bold">Algorithm:</span> Model computes the gap between market mid and client mid.
           If gap &lt; <span className="text-yellow-400">holdThreshold</span> → <span className="text-gray-300">HOLD</span>.
           If gap &gt; <span className="text-yellow-400">smoothStepThreshold</span> → <span className="text-purple-300">SMOOTH_STEP</span> (close <span className="text-yellow-400">smoothStepFactor</span> of gap).
           Otherwise → <span className="text-green-300">PUBLISH</span> with <span className="text-yellow-400">publishProbability</span> (close <span className="text-yellow-400">publishFactor</span> of gap).

@@ -13,7 +13,7 @@ const LEGEND_ITEMS = [
   { key: 'client', label: 'Client', color: '#00d4aa' },
   { key: 'clientBid', label: '▼', color: '#00d4aa44' },
   { key: 'agentAsk', label: '▲', color: '#a855f744' },
-  { key: 'agent', label: 'Agent', color: '#a855f7' },
+  { key: 'agent', label: 'Model', color: '#a855f7' },
   { key: 'agentBid', label: '▼', color: '#a855f744' },
 ];
 
@@ -25,7 +25,7 @@ const SOURCES = [
 ];
 const GROUPS = [
   { mid: 'median', ask: 'spotAsk', bid: 'spotBid', extra: [{ key: 'spreadHist', label: 'Spread', marker: '▮' }], label: 'Spot', color: '#c9a227' },
-  { mid: 'agent', ask: 'agentAsk', bid: 'agentBid', label: 'Agent', color: '#a855f7' },
+  { mid: 'agent', ask: 'agentAsk', bid: 'agentBid', label: 'Model', color: '#a855f7' },
   { mid: 'client', ask: 'clientAsk', bid: 'clientBid', label: 'Client', color: '#00d4aa' },
 ];
 
@@ -365,8 +365,11 @@ export default function Chart({ rateHistory, pair, onPairChange, onVisiblePriceR
     const spreadData = [];
 
     let lastTime = 0;
+    // Lightweight-charts renders time axis as UTC. To display in the viewer's
+    // local time zone, shift each timestamp by the negative TZ offset.
+    const tzOffsetSec = new Date().getTimezoneOffset() * 60;
     rateHistory.forEach((point) => {
-      let time = Math.floor(point.timestamp / 1000);
+      let time = Math.floor(point.timestamp / 1000) - tzOffsetSec;
       // Ensure strictly ascending timestamps
       if (time <= lastTime) {
         time = lastTime + 1;
@@ -438,7 +441,6 @@ export default function Chart({ rateHistory, pair, onPairChange, onVisiblePriceR
       <div className="flex items-center gap-3 px-[18px] py-3 border-b border-white/[0.075] shrink-0">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-ink whitespace-nowrap leading-tight">Live Rate Chart</h2>
-          <p className="text-[11px] text-muted leading-tight">Spot · Client · Agent quotes</p>
         </div>
         <span className="w-px h-6 bg-white/10" />
         {/* Sources dropdown */}

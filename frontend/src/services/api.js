@@ -57,3 +57,19 @@ export async function updateAgentParams(params) {
   if (!res.ok) throw new Error('Failed to update agent params');
   return res.json();
 }
+
+export async function sendAgentChat({ pair, message, history }) {
+  const res = await fetch(`${API_BASE}/agent/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pair, message, history }),
+  });
+  if (!res.ok) throw new Error('Failed to send chat');
+  return res.json();
+}
+
+export async function fetchNews(pair = 'USDTRY') {
+  const res = await fetch(`${API_BASE}/news?pair=${pair}`);
+  if (!res.ok) throw new Error('Failed to fetch news');
+  return res.json();
+}

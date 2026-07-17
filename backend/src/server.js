@@ -11,6 +11,8 @@ const {
 } = require('./decisionEngine');
 const { generateOrderBook } = require('./orderBookEngine');
 const { getHistory, setAgentSuggestion, clearAgentSuggestion, onClientRateUpdate } = require('./tickStore');
+const { handleChat } = require('./agentChat');
+const { fetchNews } = require('./newsProvider');
 
 const app = express();
 const PORT = 3001;
@@ -85,6 +87,31 @@ app.get('/api/agent/params', (req, res) => {
 app.put('/api/agent/params', (req, res) => {
   const updated = updateAgentParams(req.body);
   res.json(updated);
+});
+
+// POST /api/agent/chat — agent chat (Azure OpenAI gpt-5.2 backed, stub when unconfigured)
+app.post('/api/agent/chat', async (req, res) => {
+  try {
+    const { pair, message, history } = req.body || {};
+    if (!message) return res.status(400).json({ error: 'message required' });
+    const reply = await handleChat({ pair, message, history });
+    res.json(reply);
+  } catch (err) {
+    console.error('[chat]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/news?pair=USDTRY — live news from RSS feeds (Reuters, Investing.com, Bloomberg…)
+app.get('/api/news', async (req, res) => {
+  try {
+    const pair = req.query.pair || 'USDTRY';
+    const items = await fetchNews({ pair });
+    res.json({ items });
+  } catch (err) {
+    console.error('[news]', err.message);
+    res.status(500).json({ error: err.message, items: [] });
+  }
 });
 
 app.listen(PORT, () => {

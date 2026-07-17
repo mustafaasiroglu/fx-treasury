@@ -18,11 +18,11 @@ function KpiCard({ label, value, unit, format, sub1Label, sub1Value, sub2Label, 
   const sub2Formatted = format ? format(sub2Value) : sub2Value;
 
   return (
-    <article className="ui-card p-4 min-h-[118px] flex flex-col">
-      <div className="flex items-center gap-2 text-[11px] text-muted uppercase tracking-[0.07em]">
+    <article className="ui-card px-3.5 py-3 flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5 text-[11px] text-muted font-medium">
         <span>{label}</span>
         <span className="relative group">
-          <span className="w-[17px] h-[17px] inline-grid place-items-center rounded-full bg-white/[0.08] text-muted text-[11px] cursor-help">?</span>
+          <span className="w-[14px] h-[14px] inline-grid place-items-center rounded-full bg-white/[0.06] text-muted text-[9px] cursor-help">?</span>
           {tooltip && (
             <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-[10px] normal-case tracking-normal text-ink leading-relaxed w-48 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50" style={{ background: 'linear-gradient(180deg, #1e2030, #181a2a)', border: '1px solid rgba(255,255,255,0.12)' }}>
               {tooltip}
@@ -30,19 +30,26 @@ function KpiCard({ label, value, unit, format, sub1Label, sub1Value, sub2Label, 
           )}
         </span>
       </div>
-      <div className="mt-2.5 flex items-baseline gap-2">
-        <span className="text-[26px] font-extrabold tracking-tight text-ink font-mono">{formatted}</span>
-        {unit && <span className="text-[13px] font-bold text-muted">{unit}</span>}
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-[22px] font-bold tracking-tight text-ink font-mono leading-none">{formatted}</span>
+        {unit && <span className="text-[10px] font-medium text-subtle">{unit}</span>}
         <TrendArrow current={value} previous={prevValue} />
       </div>
-      <div className="mt-auto pt-3 text-xs text-muted leading-relaxed">
-        {sub1Label && (
-          <span>{sub1Label}: <b className="text-ink font-mono">{sub1Formatted}</b></span>
-        )}
-        {sub2Label && (
-          <span> · {sub2Label}: <b className="text-ink font-mono">{sub2Formatted}</b></span>
-        )}
-      </div>
+      {(sub1Label || sub2Label) && (
+        <div className="text-[10px] text-subtle font-mono leading-tight">
+          {sub1Label && (
+            <>
+              <span className="text-white/40">60M</span> <span>{sub1Formatted}</span>
+            </>
+          )}
+          {sub2Label && <span className="text-white/20">  ·  </span>}
+          {sub2Label && (
+            <>
+              <span className="text-white/40">SES</span> <span>{sub2Formatted}</span>
+            </>
+          )}
+        </div>
+      )}
     </article>
   );
 }

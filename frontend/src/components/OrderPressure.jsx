@@ -84,10 +84,11 @@ export default function OrderPressure({ rateHistory }) {
     const buyData = [];
     const sellData = [];
     let lastTime = 0;
+    const tzOffsetSec = new Date().getTimezoneOffset() * 60;
 
     rateHistory.forEach((point) => {
       if (!point.orderPressure) return;
-      let time = Math.floor(point.timestamp / 1000);
+      let time = Math.floor(point.timestamp / 1000) - tzOffsetSec;
       if (time <= lastTime) time = lastTime + 1;
       lastTime = time;
       buyData.push({ time, value: point.orderPressure.buy });
